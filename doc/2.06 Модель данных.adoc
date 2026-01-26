@@ -1,1 +1,90 @@
 === Модель данных
+
+.Users
+|===
+|Атрибут | Тип | Ограничения/Дополнения
+
+|id
+|uuid
+|PK
+
+|name
+|string
+|
+
+|restrictions
+|Restrictions
+|
+|===
+
+.Carts
+|===
+|Атрибут | Тип | Ограничения/Дополнения
+
+|id
+|uuid
+|PK
+
+|user_id
+|uuid
+|
+
+|goods
+|List of Goods
+|
+|===
+
+.Goods
+|===
+|Атрибут | Тип | Ограничения/Дополнения
+
+|id
+|uuid
+|PK
+
+|stock balance
+|integer
+|≥0
+
+|name
+|string
+|
+
+|description
+|string
+|
+
+|
+|string
+|различные характеристики
+|===
+
+.Orders
+|===
+|Атрибут | Тип | Ограничения/Дополнения
+
+|id
+|uuid
+|PK
+
+|user
+|uuid
+|
+
+|status
+|Status
+|
+
+|date created
+|local datetime
+|
+
+|date completed
+|local datetime
+| > date created
+
+|address
+|uuid
+|например, dadata uuid
+
+|===
