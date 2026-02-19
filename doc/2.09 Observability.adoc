@@ -1,7 +1,10 @@
 === Observability
 
+Телеметрия и логи собираются OpenTelemetry и обслуживаются стеком ELK. Для
+упрощения разбора инцидентов логи снабжены идентификаторами Zipkin.
+
 Мониторинг опирается на time-series database Prometheus, системы мониторинга
-Graphana и Zabbix
+Graphana и Zabbix.
 
 Для всех сервисов
 [loweralpha]
