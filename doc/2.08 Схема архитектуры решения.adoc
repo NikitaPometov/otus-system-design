@@ -2,7 +2,7 @@
 
 ifndef::imagesdir[:imagesdir: {docdir}/images]
 
-image::ass.png[]
+image::architecture solution scheme.png[]
 
 В рамках текущей архитектуры в зависимости от нагрузки можно горизонтально и
 вертикально масштабировать сервисы Заказов, Товаров, Корзины, Управления
