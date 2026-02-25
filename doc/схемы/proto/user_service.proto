@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package otus.systemdesign.v1;
+
+import "google/protobuf/timestamp.proto";
+
+service UserService {
+  rpc IdentifyUser(IdentifyUserRequest) returns (IdentifyUserResponse);
+  rpc GetUser(GetUserRequest) returns (UserProfile);
+  rpc BanUser(BanUserRequest) returns (UserProfile);
+  rpc UnbanUser(UnbanUserRequest) returns (UserProfile);
+}
+
+message UserIdentifier {
+  string type = 1;  // id, телефон, мессенджер и т.п.
+  string value = 2; // identifier value
+}
+
+message Restrictions {
+  bool is_banned = 1;
+  string reason = 2;
+  google.protobuf.Timestamp banned_at = 3;
+}
+
+message UserProfile {
+  string user_id = 1; // UUID
+  string name = 2;
+  UserIdentifier identifiers = 3;
+  Restrictions restrictions = 4;
+}
+
+message IdentifyUserRequest {
+  UserIdentifier identifier = 1;
+}
+
+message IdentifyUserResponse {
+  UserProfile user = 1;
+}
+
+message GetUserRequest {
+  string user_id = 1; // UUID
+}
+
+message BanUserRequest {
+  UserIdentifier identifier = 2;
+  string reason = 3;
+}
+
+message UnbanUserRequest {
+  UserIdentifier identifier = 2;
+}

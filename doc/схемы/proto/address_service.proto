@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package otus.systemdesign.v1;
+
+import "common.proto";
+
+service AddressValidationService {
+  rpc ValidateAddress(ValidateAddressRequest) returns (ValidateAddressResponse);
+}
+
+message ValidateAddressRequest {
+  AddressInput address = 1;
+}
+
+message ValidateAddressResponse {
+  bool valid = 1;
+  Address normalized = 2;
+  string message = 3;
+}
