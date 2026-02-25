@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package otus.systemdesign.v1;
+
+import "common.proto";
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+  rpc ListUserOrders(ListUserOrdersRequest) returns (ListUserOrdersResponse);
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
+}
+
+message CreateOrderRequest {
+  UserIdentity customer = 1;
+  string cart_id = 2; // UUID
+  AddressInput delivery_address = 3;
+  PaymentMethod payment_method = 4;
+  string idempotency_key = 5;
+}
+
+message CreateOrderResponse {
+  Order order = 1;
+}
+
+message GetOrderRequest {
+  string order_id = 1; // UUID
+}
+
+message GetOrderResponse {
+  Order order = 1;
+}
+
+message ListUserOrdersRequest {
+  UserIdentity customer = 1;
+  PageRequest page = 2;
+}
+
+message ListUserOrdersResponse {
+  repeated Order items = 1;
+}
+
+message CancelOrderRequest {
+  string order_id = 1; // UUID
+  string reason = 2;
+}
+
+message CancelOrderResponse {
+  Order order = 1;
+}

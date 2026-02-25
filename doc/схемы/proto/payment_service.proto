@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package otus.systemdesign.v1;
+
+import "common.proto";
+
+service PaymentService {
+  rpc CreatePayment(CreatePaymentRequest) returns (CreatePaymentResponse);
+  rpc GetPaymentStatus(GetPaymentStatusRequest) returns (PaymentStatusResponse);
+  rpc CancelPayment(CancelPaymentRequest) returns (PaymentStatusResponse);
+}
+
+message CreatePaymentRequest {
+  string order_id = 1; // UUID
+  UserIdentity payer = 2;
+  Money amount = 3;
+  PaymentMethod method = 4;
+  string idempotency_key = 5;
+}
+
+message CreatePaymentResponse {
+  string payment_id = 1; // UUID
+  PaymentStatus status = 2;
+  string redirect_url = 3;
+}
+
+message GetPaymentStatusRequest {
+  string payment_id = 1; // UUID
+}
+
+message PaymentStatusResponse {
+  string payment_id = 1;
+  PaymentStatus status = 2;
+}
+
+message CancelPaymentRequest {
+  string payment_id = 1; // UUID
+  string reason = 2;
+}
