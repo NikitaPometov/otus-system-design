@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package otus.systemdesign.v1;
+
+import "common.proto";
+import "google/protobuf/timestamp.proto";
+
+message EventMeta {
+  string event_id = 1; // UUID
+  google.protobuf.Timestamp occurred_at = 2;
+  string source_service = 3;
+}
+
+// Сервис управления пользователями -> Сервис уведомлений
+message UserRestrictionChangedEvent {
+  EventMeta meta = 1;
+  string user_id = 2; // UUID
+  bool is_banned = 3;
+  string reason = 4;
+  google.protobuf.Timestamp banned_at = 5;
+}
+
+// Сервис Заказов -> Сервис уведомлений
+message OrderStatusChangedEvent {
+  EventMeta meta = 1;
+  string order_id = 2; // UUID
+  UserIdentity customer = 3;
+  OrderStatus previous_status = 4;
+  OrderStatus new_status = 5;
+  Money total_amount = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp completed_at = 8;
+}
+
+// Сервис Заказов -> Сервис Товаров
+enum StockAdjustmentAction {
+  STOCK_ADJUSTMENT_ACTION_UNSPECIFIED = 0;
+  STOCK_ADJUSTMENT_ACTION_RESERVE = 1;
+  STOCK_ADJUSTMENT_ACTION_RELEASE = 2;
+  STOCK_ADJUSTMENT_ACTION_DEDUCT = 3;
+}
+
+message StockAdjustmentItem {
+  string goods_id = 1; // UUID
+  int32 quantity = 2;
+}
+
+message OrderStockAdjustmentEvent {
+  EventMeta meta = 1;
+  string order_id = 2; // UUID
+  StockAdjustmentAction action = 3;
+  repeated StockAdjustmentItem items = 4;
+}

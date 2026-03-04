@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package otus.systemdesign.v1;
+
+import "common.proto";
+
+service CatalogService {
+  rpc ListGoods(ListGoodsRequest) returns (ListGoodsResponse);
+  rpc GetGood(GetGoodRequest) returns (GetGoodResponse);
+  rpc UpsertGoods(UpsertGoodsRequest) returns (Goods);
+  rpc DeleteGoods(DeleteGoodsRequest) returns (DeleteGoodsResponse);
+  rpc UpdateStock(UpdateStockRequest) returns (Goods);
+
+  rpc BatchGetGoods(BatchGetGoodsRequest) returns (BatchGetGoodsResponse);
+}
+
+enum GoodsSortField {
+  GOODS_SORT_FIELD_UNSPECIFIED = 0;
+  GOODS_SORT_FIELD_NAME = 1;
+  GOODS_SORT_FIELD_PRICE = 2;
+  GOODS_SORT_FIELD_STOCK = 3;
+}
+
+enum SortDirection {
+  SORT_DIRECTION_UNSPECIFIED = 0;
+  SORT_DIRECTION_ASC = 1;
+  SORT_DIRECTION_DESC = 2;
+}
+
+message ListGoodsRequest {
+  string query = 1;
+  string category = 2;
+  GoodsSortField sort_field = 3;
+  SortDirection sort_direction = 4;
+  PageRequest page = 5;
+}
+
+message ListGoodsResponse {
+  repeated Goods items = 1;
+}
+
+message GetGoodRequest {
+  string goods_id = 1; // UUID
+}
+
+message GetGoodResponse {
+  Goods goods = 1;
+}
+
+message BatchGetGoodsRequest {
+  repeated string goods_ids = 1; // UUIDs
+}
+
+message BatchGetGoodsResponse {
+  repeated Goods items = 1;
+}
+
+message UpsertGoodsRequest {
+  Goods goods = 1;
+  bool allow_create = 2;
+}
+
+message UpdateStockRequest {
+  string goods_id = 1; // UUID
+  int64 stock_balance = 2; // new absolute value
+}
+
+message DeleteGoodsRequest {
+  string goods_id = 1; // UUID
+}
+
+message DeleteGoodsResponse {
+  string goods_id = 1;
+}

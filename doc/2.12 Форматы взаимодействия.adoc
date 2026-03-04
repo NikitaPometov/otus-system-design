@@ -1,1 +1,13 @@
 === Форматы взаимодействия
+
+[source,protobuf]
+.service.protobuf
+----
+include::схемы/proto/common.proto[]
+include::схемы/proto/address_service.proto[]
+include::схемы/proto/cart_service.proto[]
+include::схемы/proto/catalog_service.proto[]
+include::схемы/proto/order_service.proto[]
+include::схемы/proto/payment_service.proto[]
+include::схемы/proto/user_service.proto[]
+----

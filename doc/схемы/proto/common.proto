@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+package otus.systemdesign.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "com.otus.systemdesign.v1";
+option go_package = "otus/systemdesign/gen;systemdesign";
+
+message Money {
+  string currency = 1; // ISO-4217, e.g. "RUB"
+  int64 units = 2;
+}
+
+message UserIdentity {
+  oneof subject {
+    string user_id = 1;    // UUID для зарегистрированных
+    // альтернативный идентификатор для незарегистрированных
+    string external_id = 2;
+
+  }
+}
+
+message AddressInput {
+  string raw = 1; // строка адреса от пользователя
+  string city = 2;
+  string street = 3;
+  string house = 4;
+  string apartment = 5;
+  string postal_code = 6;
+}
+
+message Address {
+  string fias_id = 1; // UUID
+  string normalized = 2;
+  string raw = 3;
+  string country = 4;
+  string city = 5;
+  string street = 6;
+  string house = 7;
+  string apartment = 8;
+  string postal_code = 9;
+  double lat = 10;
+  double lon = 11;
+}
+
+message Goods {
+  string goods_id = 1; // UUID
+  string name = 2;
+  string description = 3;
+  int64 stock_balance = 4; // >= 0
+  Money price = 5;
+  map<string, string> attributes = 6;
+}
+
+message CartItem {
+  string goods_id = 1; // UUID
+  int32 quantity = 2;
+  Goods goods = 3;
+}
+
+message Cart {
+  string cart_id = 1; // UUID
+  UserIdentity owner = 2;
+  repeated CartItem items = 3;
+  google.protobuf.Timestamp updated_at = 4;
+}
+
+message OrderItem {
+  string goods_id = 1; // UUID
+  int32 quantity = 2;
+  Money unit_price = 3;
+  Money line_total = 4;
+}
+
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  ORDER_STATUS_CREATED = 1;
+  ORDER_STATUS_PAYMENT_PENDING = 2;
+  ORDER_STATUS_PAID = 3;
+  ORDER_STATUS_PROCESSING = 4;
+  ORDER_STATUS_SHIPPED = 5;
+  ORDER_STATUS_DELIVERED = 6;
+  ORDER_STATUS_CANCELLED = 7;
+}
+
+enum PaymentStatus {
+  PAYMENT_STATUS_UNSPECIFIED = 0;
+  PAYMENT_STATUS_PENDING = 1;
+  PAYMENT_STATUS_AUTHORIZED = 2;
+  PAYMENT_STATUS_PAID = 3;
+  PAYMENT_STATUS_FAILED = 4;
+  PAYMENT_STATUS_CANCELLED = 5;
+}
+
+enum PaymentMethodType {
+  PAYMENT_METHOD_UNSPECIFIED = 0;
+  PAYMENT_METHOD_ONLINE = 1;
+  PAYMENT_METHOD_CASH = 2;
+  PAYMENT_METHOD_CARD_ON_DELIVERY = 3;
+}
+
+message PaymentMethod {
+  PaymentMethodType type = 1;
+  string provider = 2;
+  string token = 3;
+}
+
+message Order {
+  string order_id = 1; // UUID
+  UserIdentity customer = 2;
+  OrderStatus status = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp completed_at = 5;
+  Address address = 6;
+  repeated OrderItem items = 7;
+  Money total_amount = 8;
+  PaymentStatus payment_status = 9;
+}
+
+message PageRequest {
+  int32 page_size = 1;
+  int32 page_number = 2;
+}

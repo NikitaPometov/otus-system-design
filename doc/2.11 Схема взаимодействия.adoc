@@ -1,1 +1,5 @@
 === Схема взаимодействия
+
+ifndef::imagesdir[:imagesdir: {docdir}/images]
+
+image::interaction scheme.png[]
