@@ -1,1 +1,565 @@
 === Схемы данных
+
+==== Users (PostgreSQL, сервис управления пользователями)
+
+[cols="1,1,2",options="header"]
+|===
+|Сущность/поле |Тип |Ограничения и правила
+
+|`user_profile`
+|table
+|PK: `user_id`; unique: (`identifier_type`, `identifier_value`); indexes: `identifier_value`, `is_banned`
+
+|`user_id`
+|UUID
+|PK, NOT NULL
+
+|`name`
+|TEXT
+|NOT NULL, `char_length` 1..255
+
+|`identifier_type`
+|TEXT
+|NOT NULL, допустимые значения: `id`, `phone`, `messenger`, `external`
+
+|`identifier_value`
+|TEXT
+|NOT NULL, `char_length` 1..255
+
+|`is_banned`
+|BOOLEAN
+|NOT NULL, default `FALSE`
+
+|`ban_reason`
+|TEXT
+|`char_length ≤ 1024`
+
+|`banned_at`
+|TIMESTAMPTZ
+|при `is_banned=TRUE` должен быть NOT NULL
+
+|`created_at`
+|TIMESTAMPTZ
+|NOT NULL, default `now()`
+
+|`updated_at`
+|TIMESTAMPTZ
+|NOT NULL, default `now()`
+
+|`ck_user_ban_fields`
+|constraint
+|`(is_banned=TRUE AND banned_at IS NOT NULL) OR (is_banned=FALSE)`
+|===
+
+==== Orders (PostgreSQL, сервис заказов)
+
+[cols="1,1,2",options="header"]
+|===
+|Сущность/поле |Тип |Ограничения и правила
+
+|`order_status`
+|ENUM
+|`CREATED`, `PAYMENT_PENDING`, `PAID`, `PROCESSING`, `SHIPPED`, `DELIVERED`, `CANCELLED`
+
+|`payment_status`
+|ENUM
+|`PENDING`, `AUTHORIZED`, `PAID`, `FAILED`, `CANCELLED`
+
+|`payment_method_type`
+|ENUM
+|`ONLINE`, `CASH`, `CARD_ON_DELIVERY`
+
+|`orders`
+|table
+|PK: `order_id`; unique: `idempotency_key`; indexes: `customer_user_id+created_at`, `customer_external_id+created_at`, `status+created_at`, `created_at`
+
+|`order_id`
+|UUID
+|PK, NOT NULL
+
+|`customer_user_id`
+|UUID
+|вместе с `customer_external_id` действует XOR-ограничение
+
+|`customer_external_id`
+|TEXT
+|`char_length` 1..255; вместе с `customer_user_id` действует XOR-ограничение
+
+|`status`
+|`order_status`
+|NOT NULL
+
+|`created_at`
+|TIMESTAMPTZ
+|NOT NULL
+
+|`completed_at`
+|TIMESTAMPTZ
+|`completed_at ≥ created_at`
+
+|`address_fias_id`
+|UUID
+|NULL
+
+|`address_normalized`
+|TEXT
+|NOT NULL, `char_length` 1..1024
+
+|`address_raw`
+|TEXT
+|`char_length ≤ 1024`
+
+|`address_country`
+|TEXT
+|`char_length ≤ 64`
+
+|`address_city`
+|TEXT
+|`char_length ≤ 128`
+
+|`address_street`
+|TEXT
+|`char_length ≤ 128`
+
+|`address_house`
+|TEXT
+|`char_length ≤ 32`
+
+|`address_apartment`
+|TEXT
+|`char_length ≤ 32`
+
+|`address_postal_code`
+|TEXT
+|`char_length ≤ 16`
+
+|`address_lat`
+|DOUBLE PRECISION
+|диапазон `[-90, 90]`
+
+|`address_lon`
+|DOUBLE PRECISION
+|диапазон `[-180, 180]`
+
+|`total_currency`
+|CHAR(3)
+|NOT NULL, regex `^[A-Z]\{3}$`
+
+|`total_units`
+|BIGINT
+|NOT NULL, `≥ 0`
+
+|`payment_status`
+|`payment_status`
+|NOT NULL
+
+|`payment_method`
+|`payment_method_type`
+|NOT NULL
+
+|`payment_provider`
+|TEXT
+|`char_length ≤ 128`
+
+|`payment_token_hash`
+|TEXT
+|`char_length ≤ 128`
+
+|`idempotency_key`
+|TEXT
+|NOT NULL, `char_length` 1..128, UNIQUE
+
+|`cancelled_reason`
+|TEXT
+|`char_length ≤ 1024`
+
+|`ck_orders_customer_identity`
+|constraint
+|ровно одно из полей `customer_user_id` / `customer_external_id` должно быть заполнено
+
+|`ck_orders_completed_at`
+|constraint
+|`completed_at IS NULL OR completed_at ≥ created_at`
+
+|`order_items`
+|table
+|PK: (`order_id`, `goods_id`), FK `order_id -> orders.order_id`, ON DELETE CASCADE
+
+|`order_items.order_id`
+|UUID
+|NOT NULL, FK
+
+|`order_items.goods_id`
+|UUID
+|NOT NULL
+
+|`order_items.quantity`
+|INT
+|NOT NULL, `≥ 1`
+
+|`order_items.unit_currency`
+|CHAR(3)
+|NOT NULL, regex `^[A-Z]\{3}$`
+
+|`order_items.unit_units`
+|BIGINT
+|NOT NULL, `≥ 0`
+
+|`order_items.line_currency`
+|CHAR(3)
+|NOT NULL, `line_currency = unit_currency`
+
+|`order_items.line_units`
+|BIGINT
+|NOT NULL, `line_units = unit_units * quantity`
+|===
+
+==== Catalog Master (PostgreSQL, сервис товаров command)
+
+[cols="1,1,2",options="header"]
+|===
+|Сущность/поле |Тип |Ограничения и правила
+
+|`goods`
+|table
+|PK: `goods_id`; indexes: `is_active+updated_at`, `name`, `category`
+
+|`goods_id`
+|UUID
+|PK, NOT NULL
+
+|`name`
+|TEXT
+|NOT NULL, `char_length` 1..255
+
+|`description`
+|TEXT
+|NOT NULL, `char_length` 1..20000
+
+|`category`
+|TEXT
+|`char_length ≤ 128`
+
+|`stock_balance`
+|BIGINT
+|NOT NULL, `≥ 0`
+
+|`price_currency`
+|CHAR(3)
+|NOT NULL, regex `^[A-Z]\{3}$`
+
+|`price_units`
+|BIGINT
+|NOT NULL, `≥ 0`
+
+|`is_active`
+|BOOLEAN
+|NOT NULL, default `TRUE`
+
+|`created_at`
+|TIMESTAMPTZ
+|NOT NULL, default `now()`
+
+|`updated_at`
+|TIMESTAMPTZ
+|NOT NULL, default `now()`
+
+|`deleted_at`
+|TIMESTAMPTZ
+|NULL
+
+|`goods_attribute`
+|table
+|PK: (`goods_id`, `attr_key`), FK `goods_id -> goods.goods_id`, ON DELETE CASCADE
+
+|`goods_attribute.goods_id`
+|UUID
+|NOT NULL, FK
+
+|`attr_key`
+|TEXT
+|NOT NULL, `char_length` 1..128
+
+|`attr_value`
+|TEXT
+|NOT NULL, `char_length` 1..1024
+
+|`goods_media`
+|table
+|PK: (`goods_id`, `media_kind`, `media_order`), FK `goods_id -> goods.goods_id`, ON DELETE CASCADE
+
+|`goods_media.goods_id`
+|UUID
+|NOT NULL, FK
+
+|`media_kind`
+|TEXT
+|NOT NULL, `image` or `thumbnail`
+
+|`media_order`
+|SMALLINT
+|NOT NULL, `≥ 0`
+
+|`object_key`
+|TEXT
+|NOT NULL, `char_length` 1..512
+
+|`content_type`
+|TEXT
+|NOT NULL, `image/jpeg`, `image/png`, `image/webp`
+
+|`size_bytes`
+|BIGINT
+|NOT NULL, `> 0`
+
+|`width`
+|INT
+|`> 0` если заполнено
+
+|`height`
+|INT
+|`> 0` если заполнено
+
+|`checksum_sha256`
+|CHAR(64)
+|NOT NULL, regex `^[a-f0-9]\{64}$`
+|===
+
+==== Catalog Read-Replica (PostgreSQL, сервис товаров query)
+
+[cols="1,1,2",options="header"]
+|===
+|Сущность/поле |Тип |Ограничения и правила
+
+|`goods`, `goods_attribute`, `goods_media`
+|table set
+|Схема, типы, ограничения и индексы идентичны `Catalog Master`
+|===
+
+==== Carts (Cassandra, сервис корзины)
+
+[cols="1,1,2",options="header"]
+|===
+|Сущность/поле |Тип |Ограничения и правила
+
+|`cart_ks`
+|keyspace
+|Replication: `NetworkTopologyStrategy`, `dc1=3`
+
+|`cart_item_by_owner`
+|table
+|PRIMARY KEY `((owner_kind, owner_id), goods_id)`; `default_time_to_live=2592000` (30 дней)
+
+|`owner_kind`
+|text
+|допустимые значения: `user_id`, `external_id`, `cart_id`
+
+|`owner_id`
+|text
+|непустой идентификатор владельца корзины
+
+|`goods_id`
+|uuid
+|часть primary key
+
+|`quantity`
+|int
+|`≥ 1`
+
+|`goods_name`
+|text
+|
+
+|`goods_price_currency`
+|text
+|ISO-4217, regex `[A-Z]{\3}`
+
+|`goods_price_units`
+|bigint
+|`≥ 0`
+
+|`updated_at`
+|timestamp
+|время последнего изменения
+
+|TTL правило
+|policy
+|TTL корзины продлевается при изменении корзины
+|===
+
+==== Redis (read-through cache, сервис товаров query)
+
+[cols="1,1,2",options="header"]
+|===
+|Сущность/поле |Тип |Ограничения и правила
+
+|`catalog:goods:\{goods_id}`
+|key (HASH)
+|TTL 300 секунд
+
+|`goods_id`
+|uuid (string)
+|обязательное поле
+
+|`name`
+|string
+|
+
+|`description`
+|string
+|
+
+|`stock_balance`
+|int64
+|`≥ 0`
+
+|`price_currency`
+|string
+|regex `[A-Z]\{3}`
+
+|`price_units`
+|int64
+|`≥ 0`
+
+|`category`
+|string
+|
+
+|`attrs`
+|json
+|
+
+|`updated_at`
+|epoch_ms
+|
+
+|`catalog:list:{hash(query,category,sort_field,sort_direction,page_size,page_number)}`
+|key (STRING JSON)
+|TTL 60 секунд
+
+|`items`
+|array<goods_id>
+|без дублей
+
+|`total`
+|int32
+|`≥ 0`
+
+|`generated_at`
+|epoch_ms
+|время генерации списка
+|===
+
+==== Redis (кэш адресов, сервис проверки адресов)
+
+[cols="1,1,2",options="header"]
+|===
+|Сущность/поле |Тип |Ограничения и правила
+
+|`addr:validate:{sha256(normalized_input)}`
+|key (STRING JSON)
+|TTL 86400 секунд
+
+|`valid`
+|bool
+|обязательное поле
+
+|`message`
+|string
+|
+
+|`normalized.fias_id`
+|uuid\|null
+|UUID либо `null`
+
+|`normalized.normalized`
+|string
+|
+
+|`normalized.raw`
+|string
+|
+
+|`normalized.country`
+|string
+|
+
+|`normalized.city`
+|string
+|
+
+|`normalized.street`
+|string
+|
+
+|`normalized.house`
+|string
+|
+
+|`normalized.apartment`
+|string
+|
+
+|`normalized.postal_code`
+|string
+|
+
+|`normalized.lat`
+|float64
+|диапазон `[-90, 90]`
+
+|`normalized.lon`
+|float64
+|диапазон `[-180, 180]`
+|===
+
+==== Search Index (Elasticsearch, сервис товаров query)
+
+[cols="1,1,2",options="header"]
+|===
+|Сущность/поле |Тип |Ограничения и правила
+
+|`goods_search`
+|index
+|`number_of_shards=3`, `number_of_replicas=1`, `dynamic=strict`
+
+|`goods_id`
+|keyword
+|уникален в индексе
+
+|`name`
+|text + subfield `name.raw(keyword)`
+|`name.raw.ignore_above=256`; сортировка по `name.raw`
+
+|`description`
+|text
+|
+
+|`category`
+|keyword
+|
+
+|`price_units`
+|long
+|`≥ 0`, сортировка поддерживается
+
+|`price_currency`
+|keyword
+|ISO-4217 (`[A-Z]\{3}`)
+
+|`stock_balance`
+|long
+|`≥ 0`, сортировка поддерживается
+
+|`is_active`
+|boolean
+|индексируются только документы с `is_active=true`
+
+|`attributes`
+|object
+|`enabled=true`
+
+|`updated_at`
+|date
+|
+|===
