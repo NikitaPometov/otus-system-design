@@ -2,15 +2,49 @@
 
 Доступ извне по HTTPS (TLS 1.3) (HTTP/3 по возможности) до API GW / LB.
 
-AuthN: OAuth 2.1 + OIDC с JWT access token (TTL: 15 минут) + refresh
+==== AuthN
+OAuth 2.1 + OIDC с JWT access token (TTL: 15 минут) + refresh
 token (TTL: 2 месяца). Shadow Accounts для покупки без создания профиля.
 
 Мотивировать пользователей использовать многофакторную аутентификацию: TOTP с
 recovery codes, passkey, OTP по различным каналам.
 
-AuthZ: RBAC через OPA sidecar на каждом сервисе. В случае сложных или
-динамических политик — S3 с OPA Bundle API.
+==== AuthZ
+RBAC через OPA sidecar на каждом сервисе.
+Роли: guest, customer, supervisor, support, admin.
 
+[cols="1,3,3"]
+|===
+|Роль |Permissions | Описание
+
+|Guest
+|read_goods, fill_cart, read_cart, order, read_order_status, ...
+|Незарегистрированный клиент с ограниченной функциональностью
+
+|Customer
+|read_goods, fill_cart, read_cart, order, read_order_status,
+read_order_history, manage_profile, promo, read_favorites, write_favorites, ...
+|Зарегистрированный клиент с полным доступом, настройками аккаунта,
+рекламными предложениями
+
+|Supervisor
+|read_goods, add_goods, remove_goods, edit_goods, ...
+|Супервайзер, сотрудник, отвечающий за актуализацию каталога
+
+|Support
+|read_goods, read_all_carts, read_all_order_status, ...
+|Сотрудник поддержки, для консультации пользователей по техническим аспектам
+
+|Admin
+|manage_user_roles, manage_ban_list, ...
+|
+|===
+====
+Вероятное развитие: если бизнесу потребуются сложные или динамические
+политики — S3 с OPA BundleAPI.
+====
+
+==== Внутренние взаимодействия
 mTLS между сервисами (под управлением Istio)
 
 Секреты для микросервисов — в Vault.
