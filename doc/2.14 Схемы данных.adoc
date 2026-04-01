@@ -6,9 +6,26 @@
 |===
 |Сущность/поле |Тип |Ограничения и правила
 
-|`user_profile`
-|table
-|PK: `user_id`; unique: (`identifier_type`, `identifier_value`); indexes: `identifier_value`, `is_banned`
+|`id`
+|UUID
+|PK
+
+|`user_id`
+|UUID
+|FK
+
+|`identifier_type`
+|TEXT
+|one of: `id`, `phone`, `telegram`,...
+
+|`identifier`
+|TEXT
+|NOT NULL
+
+|===
+[cols="1,1,2",options="header"]
+|===
+|Сущность/поле |Тип |Ограничения и правила
 
 |`user_id`
 |UUID
@@ -57,133 +74,23 @@
 |===
 |Сущность/поле |Тип |Ограничения и правила
 
-|`order_status`
-|ENUM
-|`CREATED`, `PAYMENT_PENDING`, `PAID`, `PROCESSING`, `SHIPPED`, `DELIVERED`, `CANCELLED`
-
-|`payment_status`
-|ENUM
-|`PENDING`, `AUTHORIZED`, `PAID`, `FAILED`, `CANCELLED`
-
-|`payment_method_type`
-|ENUM
-|`ONLINE`, `CASH`, `CARD_ON_DELIVERY`
-
-|`orders`
-|table
-|PK: `order_id`; unique: `idempotency_key`; indexes: `customer_user_id+created_at`, `customer_external_id+created_at`, `status+created_at`, `created_at`
-
 |`order_id`
 |UUID
-|PK, NOT NULL
-
-|`customer_user_id`
-|UUID
-|вместе с `customer_external_id` действует XOR-ограничение
-
-|`customer_external_id`
-|TEXT
-|`char_length` 1..255; вместе с `customer_user_id` действует XOR-ограничение
+|Ссылка на заказ
 
 |`status`
-|`order_status`
-|NOT NULL
-
-|`created_at`
-|TIMESTAMPTZ
-|NOT NULL
-
-|`completed_at`
-|TIMESTAMPTZ
-|`completed_at ≥ created_at`
-
-|`address_fias_id`
-|UUID
-|NULL
-
-|`address_normalized`
 |TEXT
-|NOT NULL, `char_length` 1..1024
+|one of: `CREATED`, `PAYMENT_PENDING`, `PAID`, `PROCESSING`, `SHIPPED`,
+`DELIVERED`, `CANCELLED`...
 
-|`address_raw`
-|TEXT
-|`char_length ≤ 1024`
+|`timestamp`
+|TIMESTAMPZ
+|Время перехода в статус
+|===
 
-|`address_country`
-|TEXT
-|`char_length ≤ 64`
-
-|`address_city`
-|TEXT
-|`char_length ≤ 128`
-
-|`address_street`
-|TEXT
-|`char_length ≤ 128`
-
-|`address_house`
-|TEXT
-|`char_length ≤ 32`
-
-|`address_apartment`
-|TEXT
-|`char_length ≤ 32`
-
-|`address_postal_code`
-|TEXT
-|`char_length ≤ 16`
-
-|`address_lat`
-|DOUBLE PRECISION
-|диапазон `[-90, 90]`
-
-|`address_lon`
-|DOUBLE PRECISION
-|диапазон `[-180, 180]`
-
-|`total_currency`
-|CHAR(3)
-|NOT NULL, regex `^[A-Z]\{3}$`
-
-|`total_units`
-|BIGINT
-|NOT NULL, `≥ 0`
-
-|`payment_status`
-|`payment_status`
-|NOT NULL
-
-|`payment_method`
-|`payment_method_type`
-|NOT NULL
-
-|`payment_provider`
-|TEXT
-|`char_length ≤ 128`
-
-|`payment_token_hash`
-|TEXT
-|`char_length ≤ 128`
-
-|`idempotency_key`
-|TEXT
-|NOT NULL, `char_length` 1..128, UNIQUE
-
-|`cancelled_reason`
-|TEXT
-|`char_length ≤ 1024`
-
-|`ck_orders_customer_identity`
-|constraint
-|ровно одно из полей `customer_user_id` / `customer_external_id` должно быть заполнено
-
-|`ck_orders_completed_at`
-|constraint
-|`completed_at IS NULL OR completed_at ≥ created_at`
-
-|`order_items`
-|table
-|PK: (`order_id`, `goods_id`), FK `order_id -> orders.order_id`, ON DELETE CASCADE
+[cols="1,1,2",options="header"]
+|===
+|Сущность/поле |Тип |Ограничения и правила
 
 |`order_items.order_id`
 |UUID
@@ -198,20 +105,90 @@
 |NOT NULL, `≥ 1`
 
 |`order_items.unit_currency`
-|CHAR(3)
+|TEXT
 |NOT NULL, regex `^[A-Z]\{3}$`
 
 |`order_items.unit_units`
 |BIGINT
 |NOT NULL, `≥ 0`
 
-|`order_items.line_currency`
-|CHAR(3)
-|NOT NULL, `line_currency = unit_currency`
-
 |`order_items.line_units`
 |BIGINT
 |NOT NULL, `line_units = unit_units * quantity`
+
+|`order_items.price`
+|NUMERIC
+|NOT NULL
+|===
+indexes: `customer_user_id+created_at`, `customer_external_id+created_at`, `status+created_at`, `created_at`
+
+[cols="1,1,2",options="header"]
+|===
+|Сущность/поле |Тип |Ограничения и правила
+
+|`payment_status`
+|TEXT
+|One of: `PENDING`, `PAID`, `FAILED`, `CANCELLED`,...
+
+|`payment_method_type`
+|TEXT
+|One of: `ONLINE`, `CASH`, `CARD_ON_DELIVERY`,...
+
+|`order_id`
+|UUID
+|PK, NOT NULL
+
+|`customer_user_id`
+|UUID
+|вместе с `customer_external_id` действует XOR-ограничение
+
+|`customer_external_id`
+|TEXT
+|`char_length` 1..255; вместе с `customer_user_id` действует XOR-ограничение
+
+|`created_at`
+|TIMESTAMPTZ
+|NOT NULL
+
+|`completed_at`
+|TIMESTAMPTZ
+|`completed_at ≥ created_at`
+
+|`address_fias_id`
+|UUID
+|NULL
+
+|`total_currency`
+|TEXT
+|NOT NULL, regex `^[A-Z]\{3}$`
+
+|`total_units`
+|BIGINT
+|NOT NULL, `≥ 0`
+
+|`payment_provider`
+|TEXT
+|`char_length ≤ 128`
+
+|`payment_token_hash`
+|TEXT
+|`char_length ≤ 128`
+
+|`idempotency_key`
+|UUID
+|NOT NULL, UNIQUE
+
+|`cancelled_reason`
+|TEXT
+|`char_length ≤ 1024`
+
+|`ck_orders_customer_identity`
+|constraint
+|ровно одно из полей `customer_user_id` / `customer_external_id` должно быть заполнено
+
+|`ck_orders_completed_at`
+|constraint
+|`completed_at IS NULL OR completed_at ≥ created_at`
 |===
 
 ==== Catalog Master (PostgreSQL, сервис товаров command)
@@ -245,7 +222,7 @@
 |NOT NULL, `≥ 0`
 
 |`price_currency`
-|CHAR(3)
+|TEXT
 |NOT NULL, regex `^[A-Z]\{3}$`
 
 |`price_units`
@@ -321,7 +298,7 @@
 |`> 0` если заполнено
 
 |`checksum_sha256`
-|CHAR(64)
+|TEXT
 |NOT NULL, regex `^[a-f0-9]\{64}$`
 |===
 
