@@ -1,6 +1,12 @@
 === Схема защиты и управления доступом
 
-Доступ извне по HTTPS (TLS 1.3) (HTTP/3 по возможности) до API GW / LB.
+Доступ извне по HTTPS (TLS 1.3) (HTTP/3 по возможности) до API GW / LB. WAF в
+ Istio Ingress Gateway в конфигурации reverse-proxy.
+
+Доступ со стороны CDN ограничен на уровне сетевых политик (Allowlist IP).
+
+Rate Limiting: Envoy RLS блокирует IP-адреса, превышающие лимиты на неудачные
+ попытки авторизации или обращения к API.
 
 ==== AuthN
 OAuth 2.1 + OIDC с JWT access token (TTL: 15 минут) + refresh
