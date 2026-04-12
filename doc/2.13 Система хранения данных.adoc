@@ -39,8 +39,8 @@ image::architecture solution scheme.png[]
 [arabic]
 . Сервис Корзины — Cassandra
 .. Тип: Cassandra. Назначение: хранение корзин с TTL для короткоживущих
-сессий, consistency level LOCAL_QUORUM. Необходимый объем: ~96 GiB логически и
- ~287 GiB физически при RF=3 (оценка ~1 KiB на корзину, 100 млн MAU).
+сессий, consistency level LOCAL_QUORUM. Необходимый объем: ~29 GiB логически и
+ ~87 GiB физически при RF=3 (оценка ~1 KiB на корзину, 15 млн DAU, запас ×2).
  Ожидаемая нагрузка:~560 RPS средняя, ~2800 RPS пиковая.
 (read/write по ключу корзины). Целевая задержка p95: <20 ms.
 . Сервис Товаров (query) — Redis (read-through)
