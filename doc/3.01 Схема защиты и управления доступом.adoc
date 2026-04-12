@@ -5,8 +5,42 @@
 
 Доступ со стороны CDN ограничен на уровне сетевых политик (Allowlist IP).
 
-Rate Limiting: Envoy RLS блокирует IP-адреса, превышающие лимиты на неудачные
-попытки авторизации или обращения к API.
+.Rate Limiting
+Envoy RLS.
+
+[cols="2,2,1"]
+|===
+|Действие | Scope | Лимит
+
+| Аутентификация
+| per IP
+| 10 PRM, 10-минутный таймаут после 5 попыток
+
+| Чтение каталога
+| per user
+| 90 RPM
+
+| Действия с корзиной
+| per user
+| 20 RPM
+
+| POST /orders
+| per user
+| 5 RPM
+
+| /catalog/* (write)
+| per supervisor
+| 100 RPH
+
+| /admin/*
+| per admin
+| 100 RPH
+
+| все действия
+| per IP
+| 1000 RPM
+
+|===
 
 .Data Leak Prevention
 Инспекция ответов на Gateway: блокируется
