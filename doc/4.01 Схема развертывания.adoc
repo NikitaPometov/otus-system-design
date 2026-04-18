@@ -1,1 +1,55 @@
 === Схема развертывания
+
+Развертывание строится на подходе Infrastructure as Code: вся инфраструктура и
+базовая конфигурация описаны в Terraform и версионируются Git.
+
+Границы и структура IaC
+
+[arabic]
+. Репозитории
+[loweralpha]
+.. infra-modules — переиспользуемые Terraform-модули:
+network, k8s, PostgreSQL (включая CNPG), Cassandra, Redis,
+Elasticsearch, CDN + origin object storage, Kafka, Prometheus, Grafana,
+Zabbix, OpenTelemetry, ELK, Vault, balancer.
+.. infra-live — конкретные окружения (dev, stage, prod) и переменные.
+. Изоляция окружений
+[loweralpha]
+.. Отдельный Terraform state на окружение.
+.. Отдельные service account и наборы прав на окружение.
+.. Запрет прямых ручных изменений.
+. Базовые правила
+[loweralpha]
+.. Все изменения инфраструктуры только через merge request.
+.. Обязательный terraform fmt, terraform validate, terraform plan.
+.. Для prod требуется ручное подтверждение применения.
+
+Развертывание инфраструктуры
+[arabic]
+. Разработчик вносит изменения в infra-modules или infra-live.
+. GitLab CI выполняет:
+[loweralpha]
+.. статические проверки;
+.. terraform init + terraform validate;
+.. terraform plan с публикацией плана в артефакт.
+. После ревью выполняется terraform apply в целевое окружение.
+. Ежедневно запускается job drift detection с алертом при рассинхронизации.
+
+Развертывание системного и прикладного ПО
+
+[arabic]
+. Системное ПО (ingress, cert-manager, monitoring, log-agent) разворачивается
+Helm-чартами в Kubernetes.
+. Прикладные сервисы разворачиваются как контейнеры в Kubernetes.
+. Конфигурация окружений хранится в Git-репозитории и делится на:
+[loweralpha]
+.. неизменяемые параметры (в chart values);
+.. секреты (в Vault, по имени).
+. Обновление конфигурации выполняется через релизный pipeline.
+
+Обновление ПО
+[arabic]
+. Для stateless-сервисов применяется rolling update с readiness/liveness probe.
+. Для критичных API применяется canary, затем полное переключение.
+. Для миграции БД применяется паттерн expand and contract.
+. Обновления platform-компонентов идут каскадом dev -> stage -> prod.
