@@ -1,5 +1,9 @@
 === Схема защиты и управления доступом
 
+ifndef::imagesdir[:imagesdir: {docdir}/images]
+
+image::security scheme.png[]
+
 Доступ извне по HTTPS (TLS 1.3) (HTTP/3 по возможности) до API GW / LB. WAF в
  Istio Ingress Gateway в конфигурации reverse-proxy.
 
