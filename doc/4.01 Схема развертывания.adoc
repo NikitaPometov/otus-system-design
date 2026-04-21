@@ -1,5 +1,9 @@
 === Схема развертывания
 
+ifndef::imagesdir[:imagesdir: {docdir}/images]
+
+image::deployment scheme.png[]
+
 Развертывание строится на подходе Infrastructure as Code: вся инфраструктура и
 базовая конфигурация описаны в Terraform и версионируются Git.
 
